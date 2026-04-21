@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Daily DSA — Spin Your Topic</title>
+    <meta
+      name="description"
+      content="Spin a pastel wheel to get a random DSA topic each day with study materials, practice questions, and a built-in todo list. 110+ topics, all in your browser."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg-1: #fff6ec;
+        --bg-2: #ffe6d5;
+        --bg-3: #ffd9e0;
+        --peach: #ffc9a3;
+        --peach-deep: #ff9f6b;
+        --blush: #ffb6c5;
+        --blush-deep: #ff8aa3;
+        --butter: #ffe27a;
+        --butter-deep: #ffcb47;
+        --tangerine: #ff9255;
+        --rose: #ff7a92;
+        --ink: #4a2e2a;
+        --ink-soft: #7a5a52;
+        --card: rgba(255, 255, 255, 0.78);
+        --card-strong: rgba(255, 255, 255, 0.95);
+        --border: rgba(255, 154, 119, 0.25);
+        --shadow-soft: 0 12px 40px -16px rgba(255, 124, 79, 0.35);
+        --shadow-card: 0 6px 24px -10px rgba(255, 124, 79, 0.25);
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        min-height: 100vh;
+        font-family: "DM Sans", system-ui, sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(1100px 700px at 80% -10%, var(--bg-3), transparent 60%),
+          radial-gradient(900px 600px at -10% 30%, #fff0d8, transparent 60%),
+          radial-gradient(800px 600px at 50% 110%, #ffe2ec, transparent 60%),
+          linear-gradient(135deg, var(--bg-1), var(--bg-2));
+        background-attachment: fixed;
+        -webkit-font-smoothing: antialiased;
+        line-height: 1.5;
+      }
+      h1, h2, h3, h4 { font-family: "Playfair Display", serif; letter-spacing: -0.01em; margin: 0; font-weight: 600; }
+      a { color: inherit; }
+      button { font-family: inherit; cursor: pointer; }
+
+      /* Decorative blobs */
+      .blob {
+        position: fixed; border-radius: 50%; filter: blur(60px); opacity: 0.55; z-index: -1; pointer-events: none;
+      }
+      .blob.b1 { width: 320px; height: 320px; background: var(--peach); top: -80px; left: -60px; }
+      .blob.b2 { width: 380px; height: 380px; background: var(--blush); top: 30%; right: -100px; }
+      .blob.b3 { width: 300px; height: 300px; background: var(--butter); bottom: -80px; left: 30%; }
+
+      .container { max-width: 1100px; margin: 0 auto; padding: 32px 20px 80px; }
+      @media (max-width: 600px) {
+        .container { padding: 16px 14px 60px; }
+        .blob { filter: blur(50px); opacity: 0.4; }
+        .blob.b1 { width: 200px; height: 200px; }
+        .blob.b2 { width: 220px; height: 220px; }
+        .blob.b3 { width: 200px; height: 200px; }
+      }
+
+      header { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; padding: 24px 0 28px; }
+      header .date { text-transform: uppercase; letter-spacing: 0.25em; font-size: 12px; color: var(--ink-soft); }
+      header h1 { font-size: clamp(1.75rem, 5vw, 3.6rem); margin-top: 6px; line-height: 1.05; font-weight: 700; }
+      header h1 em { font-style: italic; color: var(--tangerine); }
+      header p.tag { color: var(--ink-soft); margin: 10px 0 0; max-width: 580px; font-size: clamp(0.9rem, 1.5vw, 1.05rem); }
+      .stats {
+        background: var(--card); backdrop-filter: blur(8px); border: 1px solid var(--border);
+        padding: 14px 18px; border-radius: 18px; box-shadow: var(--shadow-card); text-align: right; min-width: 160px;
+      }
+      @media (max-width: 600px) {
+        header { padding: 8px 0 16px; }
+        .stats { min-width: 0; width: 100%; text-align: left; padding: 12px 14px; }
+        .stats .num { font-size: 1.4rem; }
+      }
+      .stats .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.2em; color: var(--ink-soft); }
+      .stats .num { font-family: "Playfair Display", serif; font-size: 1.8rem; }
+      .stats .num span { color: var(--ink-soft); }
+
+      .panel {
+        background: var(--card); backdrop-filter: blur(10px);
+        border: 1px solid var(--border); border-radius: 28px;
+        padding: clamp(16px, 3vw, 36px); box-shadow: var(--shadow-soft);
+        margin-bottom: 20px;
+      }
+      @media (max-width: 600px) { .panel { border-radius: 22px; } }
+
+      /* Wheel section */
+      .wheel-grid { display: grid; grid-template-columns: 1fr; gap: 28px; align-items: center; }
+      @media (min-width: 860px) { .wheel-grid { grid-template-columns: minmax(280px, 380px) 1fr; gap: 40px; } }
+
+      .wheel-wrap { position: relative; width: 100%; max-width: 380px; aspect-ratio: 1 / 1; margin: 0 auto; }
+      @media (max-width: 600px) { .wheel-wrap { max-width: min(92vw, 340px); } }
+      .wheel-wrap svg { width: 100%; height: 100%; transition: transform 4.5s cubic-bezier(0.18, 0.85, 0.22, 1); }
+      .wheel-pointer {
+        position: absolute; top: -6px; left: 50%; transform: translateX(-50%);
+        width: 0; height: 0; border-left: 16px solid transparent; border-right: 16px solid transparent;
+        border-top: 26px solid var(--rose); filter: drop-shadow(0 4px 6px rgba(0,0,0,.15)); z-index: 2;
+      }
+      .wheel-center {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        width: 26%; height: 26%; border-radius: 50%; background: white;
+        box-shadow: 0 6px 20px rgba(255, 124, 79, .25); border: 4px solid var(--butter);
+        display: flex; align-items: center; justify-content: center;
+        font-family: "Playfair Display", serif; font-weight: 700; font-size: clamp(0.8rem, 2vw, 1.1rem);
+        color: var(--tangerine); text-align: center; padding: 6px;
+      }
+
+      .topic-info .badges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+      .badge { font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em; padding: 6px 12px; border-radius: 999px; font-weight: 500; }
+      .badge.today { background: var(--butter); color: #6b4a00; }
+      .badge.cat { background: #ffe1ea; color: #8b3a55; }
+      .badge.diff-Easy { background: var(--butter); color: #6b4a00; }
+      .badge.diff-Medium { background: var(--peach); color: #6b3a14; }
+      .badge.diff-Hard { background: var(--blush); color: #872d44; }
+
+      .topic-info h2 { font-size: clamp(1.7rem, 4vw, 2.4rem); margin-top: 6px; }
+      .topic-info p.desc { color: var(--ink-soft); margin: 12px 0 0; max-width: 560px; }
+
+      .resources { display: grid; grid-template-columns: 1fr; gap: 14px; margin-top: 22px; }
+      @media (min-width: 600px) { .resources { grid-template-columns: 1fr 1fr; } }
+      .res-card { background: rgba(255,255,255,0.6); border: 1px solid var(--border); border-radius: 18px; padding: 16px; }
+      .res-card h4 { font-size: 1.05rem; }
+      .res-card ul { list-style: none; padding: 0; margin: 10px 0 0; }
+      .res-card li { margin: 6px 0; }
+      .res-card a { font-size: 0.93rem; text-decoration: underline; text-decoration-color: rgba(255, 122, 79, 0.4); text-decoration-thickness: 2px; text-underline-offset: 4px; }
+      .res-card a:hover { text-decoration-color: var(--tangerine); }
+
+      .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; align-items: center; }
+      .btn { border: none; padding: 12px 22px; border-radius: 999px; font-size: 0.92rem; font-weight: 500; transition: transform .15s ease, opacity .2s ease, box-shadow .2s ease; }
+      .btn:active { transform: scale(0.96); }
+      .btn.primary { background: linear-gradient(135deg, var(--tangerine), var(--rose)); color: white; box-shadow: var(--shadow-soft); }
+      .btn.primary:disabled { opacity: 0.6; cursor: not-allowed; }
+      .btn.secondary { background: #ffe1ea; color: #8b3a55; }
+      .actions .hint { font-size: 0.78rem; color: var(--ink-soft); }
+
+      /* Todos */
+      .todo-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px; }
+      .todo-head h3 { font-size: clamp(1.4rem, 3vw, 1.9rem); }
+      .todo-head .progress-num { font-family: "Playfair Display", serif; font-size: 1.6rem; color: var(--tangerine); text-align: right; }
+      .progress-bar { margin-top: 14px; height: 8px; width: 100%; background: #ffe6d5; border-radius: 999px; overflow: hidden; }
+      .progress-bar .fill { height: 100%; background: linear-gradient(135deg, var(--butter-deep), var(--tangerine)); transition: width .5s ease; }
+
+      .todo-form { display: flex; gap: 8px; margin-top: 18px; }
+      .todo-form input {
+        flex: 1; border: 1px solid var(--border); background: white; border-radius: 999px;
+        padding: 12px 18px; font-family: inherit; font-size: 0.95rem; color: var(--ink);
+        outline: none; transition: box-shadow .2s ease, border-color .2s ease;
+      }
+      .todo-form input:focus { border-color: var(--tangerine); box-shadow: 0 0 0 4px rgba(255, 146, 85, 0.15); }
+
+      .todo-list { list-style: none; padding: 0; margin: 18px 0 0; display: flex; flex-direction: column; gap: 8px; }
+      .todo-item {
+        display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 16px;
+        background: rgba(255,255,255,0.7); transition: background .2s ease;
+      }
+      .todo-item:hover { background: white; }
+      .check {
+        width: 24px; height: 24px; border: 2px solid #f3c2b0; border-radius: 50%;
+        background: white; display: inline-flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: all .2s ease; flex-shrink: 0;
+      }
+      .check.done { background: linear-gradient(135deg, var(--tangerine), var(--rose)); border-color: transparent; color: white; }
+      .check svg { width: 14px; height: 14px; opacity: 0; transition: opacity .15s ease; }
+      .check.done svg { opacity: 1; }
+      .todo-text { flex: 1; font-size: 0.95rem; }
+      .todo-item.done .todo-text { color: var(--ink-soft); text-decoration: line-through; }
+      .del {
+        background: transparent; border: none; color: var(--ink-soft); font-size: 12px;
+        opacity: 0; transition: opacity .2s ease, color .2s ease; padding: 4px 8px;
+      }
+      .todo-item:hover .del { opacity: 1; }
+      @media (max-width: 600px) {
+        .del { opacity: 1; }
+        .todo-item { padding: 10px 12px; gap: 10px; }
+        .todo-form { flex-direction: column; }
+        .todo-form .btn { width: 100%; }
+      }
+      .del:hover { color: #d23f5e; }
+      .empty { text-align: center; padding: 18px; background: rgba(255,255,255,0.5); border-radius: 16px; color: var(--ink-soft); font-size: 0.9rem; }
+
+      /* Browse */
+      .browse-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: flex-end; }
+      .browse-head input {
+        border: 1px solid var(--border); background: white; border-radius: 999px;
+        padding: 11px 18px; font-family: inherit; font-size: 0.92rem; color: var(--ink);
+        outline: none; min-width: 0; flex: 1 1 100%; max-width: 320px;
+      }
+      .browse-head input:focus { border-color: var(--tangerine); box-shadow: 0 0 0 4px rgba(255,146,85,.15); }
+      .browse-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 20px; }
+      @media (min-width: 600px) { .browse-grid { grid-template-columns: 1fr 1fr; } }
+      @media (min-width: 980px) { .browse-grid { grid-template-columns: 1fr 1fr 1fr; } }
+      .topic-card {
+        background: rgba(255,255,255,0.7); border: 1px solid var(--border); border-radius: 18px;
+        padding: 16px; transition: transform .2s ease, box-shadow .2s ease;
+      }
+      .topic-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-card); }
+      .topic-card .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+      .topic-card h4 { font-size: 1.05rem; }
+      .topic-card .cat { font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em; color: var(--ink-soft); margin-top: 2px; }
+      .topic-card p { font-size: 0.86rem; color: var(--ink-soft); margin: 8px 0 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+      .mini-badge { font-size: 10px; padding: 3px 8px; border-radius: 999px; font-weight: 500; }
+
+      footer { text-align: center; color: var(--ink-soft); font-size: 0.8rem; margin-top: 28px; }
+
+      /* Spin animation classes */
+      .spinning { pointer-events: none; }
+    </style>
+  </head>
+  <body>
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="blob b3"></div>
+
+    <div class="container">
+      <header>
+        <div>
+          <p class="date" id="dateLabel"></p>
+          <h1>Your Daily <em>DSA</em> Pick</h1>
+          <p class="tag">A pastel little corner to focus on one Data Structures &amp; Algorithms topic per day — spin the wheel, study, and tick off your tasks.</p>
+        </div>
+        <div class="stats">
+          <p class="label">All-time</p>
+          <p class="num"><span id="doneCount">0</span> <span>/ <span id="totalCount">0</span></span></p>
+          <p class="label" style="letter-spacing: .12em">tasks completed</p>
+        </div>
+      </header>
+
+      <!-- Wheel + topic -->
+      <section class="panel">
+        <div class="wheel-grid">
+          <div>
+            <div class="wheel-wrap">
+              <div class="wheel-pointer"></div>
+              <svg id="wheel" viewBox="0 0 200 200"></svg>
+              <div class="wheel-center">SPIN<br />ME</div>
+            </div>
+            <div class="actions" style="justify-content: center; margin-top: 18px;">
+              <button class="btn primary" id="spinBtn">🎲 Spin the Wheel</button>
+            </div>
+            <p class="hint" style="text-align:center; margin-top:8px; font-size: 0.78rem; color: var(--ink-soft);">A topic auto-saves for today. Spin again to reroll.</p>
+          </div>
+
+          <div class="topic-info" id="topicInfo">
+            <div class="badges">
+              <span class="badge today">Today's topic</span>
+              <span class="badge cat" id="topicCat">—</span>
+              <span class="badge diff-Easy" id="topicDiff">—</span>
+            </div>
+            <h2 id="topicName">Spin the wheel to begin ✨</h2>
+            <p class="desc" id="topicDesc">Press the button to randomly pick today's DSA study topic.</p>
+            <div class="resources">
+              <div class="res-card">
+                <h4>📚 Study Materials</h4>
+                <ul id="studyList"><li style="color: var(--ink-soft); font-size: 0.9rem;">Awaiting spin…</li></ul>
+              </div>
+              <div class="res-card">
+                <h4>💪 Practice Questions</h4>
+                <ul id="practiceList"><li style="color: var(--ink-soft); font-size: 0.9rem;">Awaiting spin…</li></ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Todos -->
+      <section class="panel" id="todoPanel" style="display:none;">
+        <div class="todo-head">
+          <div>
+            <h3>Today's Study Plan</h3>
+            <p style="color: var(--ink-soft); font-size: 0.9rem; margin: 4px 0 0;">Tasks for <strong id="todoTopicName" style="color: var(--ink);"></strong></p>
+          </div>
+          <div>
+            <p class="progress-num" id="progressNum">0%</p>
+            <p style="font-size: 0.75rem; color: var(--ink-soft); text-align: right; margin: 0;"><span id="doneToday">0</span> of <span id="totalToday">0</span> done</p>
+          </div>
+        </div>
+        <div class="progress-bar"><div class="fill" id="progressFill" style="width:0%"></div></div>
+
+        <div class="todo-form">
+          <input id="todoInput" placeholder="Add a study task…" />
+          <button class="btn secondary" id="addTodoBtn">Add</button>
+        </div>
+        <ul class="todo-list" id="todoList"></ul>
+      </section>
+
+      <!-- Browse -->
+      <section class="panel">
+        <div class="browse-head">
+          <div>
+            <h3 style="font-size: clamp(1.4rem, 3vw, 1.9rem);">Browse all topics</h3>
+            <p style="color: var(--ink-soft); font-size: 0.9rem; margin: 4px 0 0;"><span id="topicTotal">0</span> curated DSA topics — search to explore.</p>
+          </div>
+          <input id="browseInput" placeholder="Search topics…" />
+        </div>
+        <div class="browse-grid" id="browseGrid"></div>
+      </section>
+
+      <footer>Made with 🧡 — your progress is saved locally in your browser.</footer>
+    </div>
+
+    <script>
+      /* ============ DATA: 110 DSA TOPICS ============ */
+      const gfg = (s) => `https://www.geeksforgeeks.org/${s}/`;
+      const lc = (s) => `https://leetcode.com/problems/${s}/`;
+      const TOPICS = [
+        {id:1,name:"Arrays Basics",category:"Arrays",difficulty:"Easy",description:"Fundamentals of contiguous memory arrays, indexing, traversal, and in-place operations.",study:[{l:"GFG: Arrays",u:gfg("array-data-structure")},{l:"NeetCode Roadmap",u:"https://neetcode.io/roadmap"}],practice:[{l:"Two Sum",u:lc("two-sum")},{l:"Best Time to Buy/Sell Stock",u:lc("best-time-to-buy-and-sell-stock")}]},
+        {id:2,name:"Two Pointers",category:"Arrays",difficulty:"Easy",description:"Use two indices moving through a sequence to solve problems in O(n).",study:[{l:"GFG Two Pointer",u:gfg("two-pointers-technique")}],practice:[{l:"Valid Palindrome",u:lc("valid-palindrome")},{l:"3Sum",u:lc("3sum")}]},
+        {id:3,name:"Sliding Window",category:"Arrays",difficulty:"Medium",description:"Maintain a moving subarray window to compute results efficiently.",study:[{l:"GFG Sliding Window",u:gfg("window-sliding-technique")}],practice:[{l:"Longest Substring Without Repeating",u:lc("longest-substring-without-repeating-characters")},{l:"Min Window Substring",u:lc("minimum-window-substring")}]},
+        {id:4,name:"Prefix Sum",category:"Arrays",difficulty:"Easy",description:"Precompute cumulative sums to answer range-sum queries in O(1).",study:[{l:"GFG Prefix Sum",u:gfg("prefix-sum-array-implementation-applications-competitive-programming")}],practice:[{l:"Subarray Sum Equals K",u:lc("subarray-sum-equals-k")}]},
+        {id:5,name:"Kadane's Algorithm",category:"Arrays",difficulty:"Medium",description:"Find maximum subarray sum in linear time.",study:[{l:"GFG Kadane",u:gfg("largest-sum-contiguous-subarray")}],practice:[{l:"Maximum Subarray",u:lc("maximum-subarray")}]},
+        {id:6,name:"Dutch National Flag",category:"Arrays",difficulty:"Medium",description:"Three-way partitioning of an array around pivots.",study:[{l:"GFG DNF",u:gfg("sort-an-array-of-0s-1s-and-2s")}],practice:[{l:"Sort Colors",u:lc("sort-colors")}]},
+        {id:7,name:"Merge Intervals",category:"Arrays",difficulty:"Medium",description:"Sort intervals and merge overlapping ranges.",study:[{l:"GFG Intervals",u:gfg("merging-intervals")}],practice:[{l:"Merge Intervals",u:lc("merge-intervals")},{l:"Insert Interval",u:lc("insert-interval")}]},
+        {id:8,name:"String Manipulation",category:"Strings",difficulty:"Easy",description:"Common string operations, immutability, and char arrays.",study:[{l:"GFG Strings",u:gfg("string-data-structure")}],practice:[{l:"Reverse String",u:lc("reverse-string")}]},
+        {id:9,name:"Anagrams & Hashing",category:"Strings",difficulty:"Easy",description:"Use frequency counts or sorting to detect anagrams.",study:[{l:"GFG Anagrams",u:gfg("check-whether-two-strings-are-anagram-of-each-other")}],practice:[{l:"Group Anagrams",u:lc("group-anagrams")}]},
+        {id:10,name:"Palindromes",category:"Strings",difficulty:"Easy",description:"Detecting and generating palindromic structures.",study:[{l:"GFG Palindrome",u:gfg("c-program-check-given-string-palindrome")}],practice:[{l:"Longest Palindromic Substring",u:lc("longest-palindromic-substring")}]},
+        {id:11,name:"KMP Algorithm",category:"Strings",difficulty:"Hard",description:"Knuth–Morris–Pratt pattern matching using LPS array.",study:[{l:"GFG KMP",u:gfg("kmp-algorithm-for-pattern-searching")}],practice:[{l:"Find First Occurrence",u:lc("find-the-index-of-the-first-occurrence-in-a-string")}]},
+        {id:12,name:"Rabin-Karp",category:"Strings",difficulty:"Hard",description:"Rolling hash based substring search.",study:[{l:"GFG Rabin-Karp",u:gfg("rabin-karp-algorithm-for-pattern-searching")}],practice:[{l:"Repeated DNA Sequences",u:lc("repeated-dna-sequences")}]},
+        {id:13,name:"Z Algorithm",category:"Strings",difficulty:"Hard",description:"Linear time pattern matching using Z-array.",study:[{l:"GFG Z-Algo",u:gfg("z-algorithm-linear-time-pattern-searching-algorithm")}],practice:[{l:"CSES String Matching",u:"https://cses.fi/problemset/task/1753"}]},
+        {id:14,name:"Manacher's Algorithm",category:"Strings",difficulty:"Hard",description:"Find all palindromic substrings in linear time.",study:[{l:"GFG Manacher",u:gfg("manachers-algorithm-linear-time-longest-palindromic-substring-part-1")}],practice:[{l:"Longest Palindromic Substring",u:lc("longest-palindromic-substring")}]},
+        {id:15,name:"Trie / Prefix Tree",category:"Strings",difficulty:"Medium",description:"Prefix tree for efficient string lookups and autocomplete.",study:[{l:"GFG Trie",u:gfg("trie-insert-and-search")}],practice:[{l:"Implement Trie",u:lc("implement-trie-prefix-tree")}]},
+        {id:16,name:"Binary Search",category:"Searching",difficulty:"Easy",description:"Divide-and-conquer search on sorted arrays.",study:[{l:"GFG Binary Search",u:gfg("binary-search")}],practice:[{l:"Binary Search",u:lc("binary-search")}]},
+        {id:17,name:"Binary Search on Answer",category:"Searching",difficulty:"Hard",description:"Apply binary search over a value range to find optimal answers.",study:[{l:"CP-Algo BS",u:"https://cp-algorithms.com/num_methods/binary_search.html"}],practice:[{l:"Koko Eating Bananas",u:lc("koko-eating-bananas")}]},
+        {id:18,name:"Ternary Search",category:"Searching",difficulty:"Medium",description:"Search for unimodal function maximum/minimum.",study:[{l:"GFG Ternary Search",u:gfg("ternary-search")}],practice:[{l:"Peak Index Mountain Array",u:lc("peak-index-in-a-mountain-array")}]},
+        {id:19,name:"Bubble Sort",category:"Sorting",difficulty:"Easy",description:"Simple O(n^2) sort swapping adjacent elements.",study:[{l:"GFG Bubble",u:gfg("bubble-sort")}],practice:[{l:"Sort an Array",u:lc("sort-an-array")}]},
+        {id:20,name:"Selection Sort",category:"Sorting",difficulty:"Easy",description:"Repeatedly find minimum and place it.",study:[{l:"GFG Selection",u:gfg("selection-sort")}],practice:[{l:"Sort an Array",u:lc("sort-an-array")}]},
+        {id:21,name:"Insertion Sort",category:"Sorting",difficulty:"Easy",description:"Build sorted array one element at a time.",study:[{l:"GFG Insertion",u:gfg("insertion-sort")}],practice:[{l:"Insertion Sort List",u:lc("insertion-sort-list")}]},
+        {id:22,name:"Merge Sort",category:"Sorting",difficulty:"Medium",description:"Divide and conquer O(n log n) stable sort.",study:[{l:"GFG Merge Sort",u:gfg("merge-sort")}],practice:[{l:"Sort List",u:lc("sort-list")}]},
+        {id:23,name:"Quick Sort",category:"Sorting",difficulty:"Medium",description:"In-place pivot partitioning sort.",study:[{l:"GFG Quick Sort",u:gfg("quick-sort")}],practice:[{l:"Kth Largest Element",u:lc("kth-largest-element-in-an-array")}]},
+        {id:24,name:"Heap Sort",category:"Sorting",difficulty:"Medium",description:"Sort using heap data structure.",study:[{l:"GFG Heap Sort",u:gfg("heap-sort")}],practice:[{l:"Sort an Array",u:lc("sort-an-array")}]},
+        {id:25,name:"Counting Sort",category:"Sorting",difficulty:"Medium",description:"Non-comparison sort for bounded integer ranges.",study:[{l:"GFG Counting Sort",u:gfg("counting-sort")}],practice:[{l:"Sort Colors",u:lc("sort-colors")}]},
+        {id:26,name:"Radix Sort",category:"Sorting",difficulty:"Hard",description:"Digit-by-digit sort using stable counting sort.",study:[{l:"GFG Radix Sort",u:gfg("radix-sort")}],practice:[{l:"Maximum Gap",u:lc("maximum-gap")}]},
+        {id:27,name:"Bucket Sort",category:"Sorting",difficulty:"Medium",description:"Distribute into buckets and sort individually.",study:[{l:"GFG Bucket Sort",u:gfg("bucket-sort-2")}],practice:[{l:"Top K Frequent Elements",u:lc("top-k-frequent-elements")}]},
+        {id:28,name:"Singly Linked List",category:"Linked List",difficulty:"Easy",description:"Nodes connected with next pointers.",study:[{l:"GFG Linked List",u:gfg("data-structures/linked-list")}],practice:[{l:"Reverse Linked List",u:lc("reverse-linked-list")}]},
+        {id:29,name:"Doubly Linked List",category:"Linked List",difficulty:"Medium",description:"Nodes with prev and next pointers.",study:[{l:"GFG DLL",u:gfg("doubly-linked-list")}],practice:[{l:"Flatten Multilevel DLL",u:lc("flatten-a-multilevel-doubly-linked-list")}]},
+        {id:30,name:"Circular Linked List",category:"Linked List",difficulty:"Medium",description:"Last node points back to head.",study:[{l:"GFG Circular",u:gfg("circular-linked-list")}],practice:[{l:"Linked List Cycle",u:lc("linked-list-cycle")}]},
+        {id:31,name:"Floyd's Cycle Detection",category:"Linked List",difficulty:"Medium",description:"Tortoise and hare pointers to detect cycles.",study:[{l:"GFG Floyd",u:gfg("detect-loop-in-a-linked-list")}],practice:[{l:"Linked List Cycle II",u:lc("linked-list-cycle-ii")}]},
+        {id:32,name:"Merge Two Sorted Lists",category:"Linked List",difficulty:"Easy",description:"Combine two sorted linked lists into one.",study:[{l:"GFG Merge Sorted",u:gfg("merge-two-sorted-linked-lists")}],practice:[{l:"Merge Two Sorted Lists",u:lc("merge-two-sorted-lists")}]},
+        {id:33,name:"LRU Cache",category:"Linked List",difficulty:"Hard",description:"Combine hashmap with doubly linked list for O(1) ops.",study:[{l:"GFG LRU",u:gfg("lru-cache-implementation")}],practice:[{l:"LRU Cache",u:lc("lru-cache")}]},
+        {id:34,name:"Stack Basics",category:"Stack",difficulty:"Easy",description:"LIFO data structure with push/pop.",study:[{l:"GFG Stack",u:gfg("stack-data-structure")}],practice:[{l:"Valid Parentheses",u:lc("valid-parentheses")}]},
+        {id:35,name:"Monotonic Stack",category:"Stack",difficulty:"Medium",description:"Maintain increasing/decreasing stack for next-greater problems.",study:[{l:"GFG Monotonic",u:gfg("introduction-to-monotonic-stack-data-structure-and-algorithm-tutorials")}],practice:[{l:"Daily Temperatures",u:lc("daily-temperatures")}]},
+        {id:36,name:"Min Stack",category:"Stack",difficulty:"Medium",description:"Stack supporting O(1) min retrieval.",study:[{l:"GFG Min Stack",u:gfg("design-a-stack-that-supports-getmin-in-o1-time-and-o1-extra-space")}],practice:[{l:"Min Stack",u:lc("min-stack")}]},
+        {id:37,name:"Queue Basics",category:"Queue",difficulty:"Easy",description:"FIFO data structure with enqueue/dequeue.",study:[{l:"GFG Queue",u:gfg("queue-data-structure")}],practice:[{l:"Implement Queue using Stacks",u:lc("implement-queue-using-stacks")}]},
+        {id:38,name:"Deque",category:"Queue",difficulty:"Medium",description:"Double-ended queue allowing inserts/removes from both ends.",study:[{l:"GFG Deque",u:gfg("deque-set-1-introduction-applications")}],practice:[{l:"Sliding Window Maximum",u:lc("sliding-window-maximum")}]},
+        {id:39,name:"Priority Queue / Heap",category:"Queue",difficulty:"Medium",description:"Heap-backed queue for highest/lowest priority retrieval.",study:[{l:"GFG Heap",u:gfg("heap-data-structure")}],practice:[{l:"Kth Largest in Stream",u:lc("kth-largest-element-in-a-stream")}]},
+        {id:40,name:"Circular Queue",category:"Queue",difficulty:"Medium",description:"Fixed-size queue using modular indexing.",study:[{l:"GFG Circular Queue",u:gfg("circular-queue-set-1-introduction-array-implementation")}],practice:[{l:"Design Circular Queue",u:lc("design-circular-queue")}]},
+        {id:41,name:"Hash Tables",category:"Hashing",difficulty:"Easy",description:"Key-value lookup with average O(1) operations.",study:[{l:"GFG Hashing",u:gfg("hashing-data-structure")}],practice:[{l:"Two Sum",u:lc("two-sum")}]},
+        {id:42,name:"Hash Maps & Sets",category:"Hashing",difficulty:"Easy",description:"Built-in hashmap/hashset usage patterns.",study:[{l:"GFG HashMap",u:gfg("hashmap-in-java")}],practice:[{l:"Contains Duplicate",u:lc("contains-duplicate")}]},
+        {id:43,name:"Collision Handling",category:"Hashing",difficulty:"Medium",description:"Chaining vs open addressing strategies.",study:[{l:"GFG Collisions",u:gfg("hashing-set-2-separate-chaining")}],practice:[{l:"Design HashMap",u:lc("design-hashmap")}]},
+        {id:44,name:"Rolling Hash",category:"Hashing",difficulty:"Hard",description:"Hash that updates in O(1) when window slides.",study:[{l:"CP-Algo Hashing",u:"https://cp-algorithms.com/string/string-hashing.html"}],practice:[{l:"Longest Duplicate Substring",u:lc("longest-duplicate-substring")}]},
+        {id:45,name:"Binary Tree Basics",category:"Trees",difficulty:"Easy",description:"Tree where each node has up to two children.",study:[{l:"GFG Tree",u:gfg("binary-tree-data-structure")}],practice:[{l:"Maximum Depth",u:lc("maximum-depth-of-binary-tree")}]},
+        {id:46,name:"BST",category:"Trees",difficulty:"Medium",description:"Binary Search Tree with ordered property.",study:[{l:"GFG BST",u:gfg("binary-search-tree-data-structure")}],practice:[{l:"Validate BST",u:lc("validate-binary-search-tree")}]},
+        {id:47,name:"Tree Traversals",category:"Trees",difficulty:"Easy",description:"Preorder, inorder, postorder, level-order traversals.",study:[{l:"GFG Traversals",u:gfg("tree-traversals-inorder-preorder-and-postorder")}],practice:[{l:"Inorder Traversal",u:lc("binary-tree-inorder-traversal")}]},
+        {id:48,name:"BFS on Trees",category:"Trees",difficulty:"Easy",description:"Level-order traversal using a queue.",study:[{l:"GFG Level Order",u:gfg("level-order-tree-traversal")}],practice:[{l:"Level Order Traversal",u:lc("binary-tree-level-order-traversal")}]},
+        {id:49,name:"DFS on Trees",category:"Trees",difficulty:"Easy",description:"Recursive depth-first exploration.",study:[{l:"GFG DFS",u:gfg("depth-first-search-or-dfs-for-a-graph")}],practice:[{l:"Path Sum",u:lc("path-sum")}]},
+        {id:50,name:"Lowest Common Ancestor",category:"Trees",difficulty:"Medium",description:"Find deepest common ancestor of two nodes.",study:[{l:"GFG LCA",u:gfg("lowest-common-ancestor-binary-tree-set-1")}],practice:[{l:"LCA of Binary Tree",u:lc("lowest-common-ancestor-of-a-binary-tree")}]},
+        {id:51,name:"AVL Tree",category:"Trees",difficulty:"Hard",description:"Self-balancing BST using rotations.",study:[{l:"GFG AVL",u:gfg("avl-tree-set-1-insertion")}],practice:[{l:"Balance a BST",u:lc("balance-a-binary-search-tree")}]},
+        {id:52,name:"Red-Black Tree",category:"Trees",difficulty:"Hard",description:"Balanced BST using red/black coloring rules.",study:[{l:"GFG RBT",u:gfg("red-black-tree-set-1-introduction-2")}],practice:[{l:"Implement TreeMap",u:"https://leetcode.com/problemset/"}]},
+        {id:53,name:"Segment Tree",category:"Trees",difficulty:"Hard",description:"Tree for range queries and updates in O(log n).",study:[{l:"CP-Algo Segment",u:"https://cp-algorithms.com/data_structures/segment_tree.html"}],practice:[{l:"Range Sum Query Mutable",u:lc("range-sum-query-mutable")}]},
+        {id:54,name:"Fenwick Tree (BIT)",category:"Trees",difficulty:"Hard",description:"Binary Indexed Tree for prefix sums and point updates.",study:[{l:"CP-Algo BIT",u:"https://cp-algorithms.com/data_structures/fenwick.html"}],practice:[{l:"Count of Smaller Numbers",u:lc("count-of-smaller-numbers-after-self")}]},
+        {id:55,name:"Trie Applications",category:"Trees",difficulty:"Medium",description:"Use trie for prefix queries, autocomplete, word boards.",study:[{l:"GFG Trie",u:gfg("trie-insert-and-search")}],practice:[{l:"Word Search II",u:lc("word-search-ii")}]},
+        {id:56,name:"Suffix Tree",category:"Trees",difficulty:"Hard",description:"Compressed trie of all suffixes for substring queries.",study:[{l:"GFG Suffix Tree",u:gfg("ukkonens-suffix-tree-construction-part-1")}],practice:[{l:"Longest Repeating Substring",u:lc("longest-repeating-substring")}]},
+        {id:57,name:"Suffix Array",category:"Strings",difficulty:"Hard",description:"Sorted array of suffixes for substring queries.",study:[{l:"CP-Algo Suffix Array",u:"https://cp-algorithms.com/string/suffix-array.html"}],practice:[{l:"Longest Duplicate Substring",u:lc("longest-duplicate-substring")}]},
+        {id:58,name:"N-ary Tree",category:"Trees",difficulty:"Medium",description:"Trees where nodes have arbitrary children counts.",study:[{l:"GFG N-ary",u:gfg("generic-treesn-array-trees")}],practice:[{l:"N-ary Level Order",u:lc("n-ary-tree-level-order-traversal")}]},
+        {id:59,name:"Morris Traversal",category:"Trees",difficulty:"Hard",description:"Inorder traversal in O(1) space using threading.",study:[{l:"GFG Morris",u:gfg("inorder-tree-traversal-without-recursion-and-without-stack")}],practice:[{l:"Recover BST",u:lc("recover-binary-search-tree")}]},
+        {id:60,name:"Min Heap / Max Heap",category:"Heap",difficulty:"Medium",description:"Complete binary tree with heap order property.",study:[{l:"GFG Heap",u:gfg("binary-heap")}],practice:[{l:"Last Stone Weight",u:lc("last-stone-weight")}]},
+        {id:61,name:"Top K Elements",category:"Heap",difficulty:"Medium",description:"Use a heap of size K for top/bottom K problems.",study:[{l:"GFG Top K",u:gfg("k-largestor-smallest-elements-in-an-array")}],practice:[{l:"Top K Frequent",u:lc("top-k-frequent-elements")}]},
+        {id:62,name:"Median of Stream",category:"Heap",difficulty:"Hard",description:"Two heaps to track running median.",study:[{l:"GFG Median",u:gfg("median-of-stream-of-integers-running-integers")}],practice:[{l:"Find Median Data Stream",u:lc("find-median-from-data-stream")}]},
+        {id:63,name:"Graph Representation",category:"Graphs",difficulty:"Easy",description:"Adjacency list vs matrix tradeoffs.",study:[{l:"GFG Graph",u:gfg("graph-and-its-representations")}],practice:[{l:"Find the Town Judge",u:lc("find-the-town-judge")}]},
+        {id:64,name:"Graph BFS",category:"Graphs",difficulty:"Easy",description:"Breadth-first search using a queue.",study:[{l:"GFG BFS",u:gfg("breadth-first-search-or-bfs-for-a-graph")}],practice:[{l:"Number of Islands",u:lc("number-of-islands")}]},
+        {id:65,name:"Graph DFS",category:"Graphs",difficulty:"Easy",description:"Depth-first search recursive/iterative.",study:[{l:"GFG DFS",u:gfg("depth-first-search-or-dfs-for-a-graph")}],practice:[{l:"Clone Graph",u:lc("clone-graph")}]},
+        {id:66,name:"Topological Sort",category:"Graphs",difficulty:"Medium",description:"Linear ordering of DAG nodes.",study:[{l:"GFG Topo",u:gfg("topological-sorting")}],practice:[{l:"Course Schedule II",u:lc("course-schedule-ii")}]},
+        {id:67,name:"Dijkstra's Algorithm",category:"Graphs",difficulty:"Hard",description:"Shortest path in non-negative weighted graphs.",study:[{l:"GFG Dijkstra",u:gfg("dijkstras-shortest-path-algorithm-greedy-algo-7")}],practice:[{l:"Network Delay Time",u:lc("network-delay-time")}]},
+        {id:68,name:"Bellman-Ford",category:"Graphs",difficulty:"Hard",description:"Shortest paths with negative edges, detects negative cycles.",study:[{l:"GFG Bellman-Ford",u:gfg("bellman-ford-algorithm-dp-23")}],practice:[{l:"Cheapest Flights K Stops",u:lc("cheapest-flights-within-k-stops")}]},
+        {id:69,name:"Floyd-Warshall",category:"Graphs",difficulty:"Hard",description:"All-pairs shortest paths in O(V^3).",study:[{l:"GFG FW",u:gfg("floyd-warshall-algorithm-dp-16")}],practice:[{l:"Find the City",u:lc("find-the-city-with-the-smallest-number-of-neighbors-at-a-threshold-distance")}]},
+        {id:70,name:"Kruskal's MST",category:"Graphs",difficulty:"Hard",description:"Minimum spanning tree via sorted edges and Union-Find.",study:[{l:"GFG Kruskal",u:gfg("kruskals-minimum-spanning-tree-algorithm-greedy-algo-2")}],practice:[{l:"Min Cost Connect Points",u:lc("min-cost-to-connect-all-points")}]},
+        {id:71,name:"Prim's MST",category:"Graphs",difficulty:"Hard",description:"MST grown from a starting vertex.",study:[{l:"GFG Prim",u:gfg("prims-minimum-spanning-tree-mst-greedy-algo-5")}],practice:[{l:"Min Cost Connect Points",u:lc("min-cost-to-connect-all-points")}]},
+        {id:72,name:"Union-Find (DSU)",category:"Graphs",difficulty:"Medium",description:"Disjoint set with union by rank and path compression.",study:[{l:"GFG DSU",u:gfg("introduction-to-disjoint-set-data-structure-or-union-find-algorithm")}],practice:[{l:"Number of Provinces",u:lc("number-of-provinces")}]},
+        {id:73,name:"Tarjan's SCC",category:"Graphs",difficulty:"Hard",description:"Strongly connected components in linear time.",study:[{l:"GFG Tarjan",u:gfg("tarjan-algorithm-find-strongly-connected-components")}],practice:[{l:"Critical Connections",u:lc("critical-connections-in-a-network")}]},
+        {id:74,name:"Kosaraju's SCC",category:"Graphs",difficulty:"Hard",description:"Two-pass DFS to find SCCs.",study:[{l:"GFG Kosaraju",u:gfg("strongly-connected-components")}],practice:[{l:"Connected Components",u:"https://cses.fi/problemset/"}]},
+        {id:75,name:"Bridges & Articulation",category:"Graphs",difficulty:"Hard",description:"Find critical edges and cut vertices in graphs.",study:[{l:"GFG Bridges",u:gfg("bridge-in-a-graph")}],practice:[{l:"Critical Connections",u:lc("critical-connections-in-a-network")}]},
+        {id:76,name:"Bipartite Check",category:"Graphs",difficulty:"Medium",description:"Two-color a graph using BFS/DFS.",study:[{l:"GFG Bipartite",u:gfg("bipartite-graph")}],practice:[{l:"Is Graph Bipartite?",u:lc("is-graph-bipartite")}]},
+        {id:77,name:"A* Search",category:"Graphs",difficulty:"Hard",description:"Heuristic-driven shortest path search.",study:[{l:"GFG A*",u:gfg("a-search-algorithm")}],practice:[{l:"Sliding Puzzle",u:lc("sliding-puzzle")}]},
+        {id:78,name:"Recursion Basics",category:"Recursion",difficulty:"Easy",description:"Functions that call themselves with smaller subproblems.",study:[{l:"GFG Recursion",u:gfg("recursion")}],practice:[{l:"Power of Two",u:lc("power-of-two")}]},
+        {id:79,name:"Backtracking",category:"Backtracking",difficulty:"Medium",description:"Explore solutions and undo on failure.",study:[{l:"GFG Backtracking",u:gfg("backtracking-algorithms")}],practice:[{l:"Subsets",u:lc("subsets")}]},
+        {id:80,name:"N-Queens",category:"Backtracking",difficulty:"Hard",description:"Place N queens on a board so none attack each other.",study:[{l:"GFG N-Queens",u:gfg("n-queen-problem-backtracking-3")}],practice:[{l:"N-Queens",u:lc("n-queens")}]},
+        {id:81,name:"Sudoku Solver",category:"Backtracking",difficulty:"Hard",description:"Fill 9x9 board satisfying Sudoku rules.",study:[{l:"GFG Sudoku",u:gfg("sudoku-backtracking-7")}],practice:[{l:"Sudoku Solver",u:lc("sudoku-solver")}]},
+        {id:82,name:"Permutations",category:"Backtracking",difficulty:"Medium",description:"Generate all orderings of a set.",study:[{l:"GFG Permutations",u:gfg("write-a-c-program-to-print-all-permutations-of-a-given-string")}],practice:[{l:"Permutations",u:lc("permutations")}]},
+        {id:83,name:"Combinations",category:"Backtracking",difficulty:"Medium",description:"Choose subsets of given size.",study:[{l:"GFG Combinations",u:gfg("print-all-possible-combinations-of-r-elements-in-a-given-array-of-size-n")}],practice:[{l:"Combinations",u:lc("combinations")}]},
+        {id:84,name:"Word Search",category:"Backtracking",difficulty:"Medium",description:"DFS through grid with backtracking.",study:[{l:"GFG Word Search",u:gfg("word-search-in-a-2d-grid-of-characters")}],practice:[{l:"Word Search",u:lc("word-search")}]},
+        {id:85,name:"DP Introduction",category:"DP",difficulty:"Medium",description:"Memoization and tabulation foundations.",study:[{l:"GFG DP",u:gfg("dynamic-programming")}],practice:[{l:"Climbing Stairs",u:lc("climbing-stairs")}]},
+        {id:86,name:"0/1 Knapsack",category:"DP",difficulty:"Medium",description:"Pick items to maximize value within capacity.",study:[{l:"GFG Knapsack",u:gfg("0-1-knapsack-problem-dp-10")}],practice:[{l:"Partition Equal Subset Sum",u:lc("partition-equal-subset-sum")}]},
+        {id:87,name:"Unbounded Knapsack",category:"DP",difficulty:"Medium",description:"Knapsack where items can be reused.",study:[{l:"GFG Unbounded",u:gfg("unbounded-knapsack-repetition-items-allowed")}],practice:[{l:"Coin Change",u:lc("coin-change")}]},
+        {id:88,name:"Longest Common Subsequence",category:"DP",difficulty:"Medium",description:"Find LCS using 2D DP table.",study:[{l:"GFG LCS",u:gfg("longest-common-subsequence-dp-4")}],practice:[{l:"LCS",u:lc("longest-common-subsequence")}]},
+        {id:89,name:"Longest Increasing Subsequence",category:"DP",difficulty:"Medium",description:"Find LIS in O(n log n) using patience sort.",study:[{l:"GFG LIS",u:gfg("longest-increasing-subsequence-dp-3")}],practice:[{l:"LIS",u:lc("longest-increasing-subsequence")}]},
+        {id:90,name:"Edit Distance",category:"DP",difficulty:"Hard",description:"Minimum edits to transform one string into another.",study:[{l:"GFG Edit Distance",u:gfg("edit-distance-dp-5")}],practice:[{l:"Edit Distance",u:lc("edit-distance")}]},
+        {id:91,name:"Matrix Chain Multiplication",category:"DP",difficulty:"Hard",description:"Find optimal parenthesization for matrix products.",study:[{l:"GFG MCM",u:gfg("matrix-chain-multiplication-dp-8")}],practice:[{l:"Burst Balloons",u:lc("burst-balloons")}]},
+        {id:92,name:"DP on Trees",category:"DP",difficulty:"Hard",description:"Use post-order recursion to compute DP states.",study:[{l:"GFG Tree DP",u:gfg("introduction-to-dynamic-programming-on-trees")}],practice:[{l:"House Robber III",u:lc("house-robber-iii")}]},
+        {id:93,name:"DP on Bitmask",category:"DP",difficulty:"Hard",description:"Use bitmask state for subset DP problems.",study:[{l:"GFG Bitmask DP",u:gfg("bitmasking-and-dynamic-programming-set-1-count-ways-to-assign-unique-cap-to-every-person")}],practice:[{l:"Shortest Superstring",u:lc("find-the-shortest-superstring")}]},
+        {id:94,name:"DP on Strings",category:"DP",difficulty:"Medium",description:"Two-string DP for LCS, palindromes, and more.",study:[{l:"GFG String DP",u:gfg("dynamic-programming-set-12-longest-palindromic-subsequence")}],practice:[{l:"Distinct Subsequences",u:lc("distinct-subsequences")}]},
+        {id:95,name:"Digit DP",category:"DP",difficulty:"Hard",description:"DP over digit positions of a number.",study:[{l:"GFG Digit DP",u:gfg("digit-dp-introduction")}],practice:[{l:"Numbers At Most N",u:lc("numbers-at-most-n-given-digit-set")}]},
+        {id:96,name:"Greedy Algorithms",category:"Greedy",difficulty:"Medium",description:"Make locally optimal choice at each step.",study:[{l:"GFG Greedy",u:gfg("greedy-algorithms")}],practice:[{l:"Jump Game",u:lc("jump-game")}]},
+        {id:97,name:"Activity Selection",category:"Greedy",difficulty:"Easy",description:"Select max non-overlapping activities.",study:[{l:"GFG Activity",u:gfg("activity-selection-problem-greedy-algo-1")}],practice:[{l:"Non-overlapping Intervals",u:lc("non-overlapping-intervals")}]},
+        {id:98,name:"Huffman Coding",category:"Greedy",difficulty:"Hard",description:"Build optimal prefix codes for compression.",study:[{l:"GFG Huffman",u:gfg("huffman-coding-greedy-algo-3")}],practice:[{l:"Reorganize String",u:lc("reorganize-string")}]},
+        {id:99,name:"Job Scheduling",category:"Greedy",difficulty:"Medium",description:"Maximize profit scheduling deadline-bound jobs.",study:[{l:"GFG Job Scheduling",u:gfg("job-sequencing-problem")}],practice:[{l:"Max Profit Job Scheduling",u:lc("maximum-profit-in-job-scheduling")}]},
+        {id:100,name:"Bit Manipulation",category:"Bits",difficulty:"Medium",description:"AND, OR, XOR, shifts, and bit tricks.",study:[{l:"GFG Bits",u:gfg("bitwise-algorithms")}],practice:[{l:"Single Number",u:lc("single-number")}]},
+        {id:101,name:"XOR Tricks",category:"Bits",difficulty:"Medium",description:"XOR-based parity, swaps and missing number.",study:[{l:"GFG XOR",u:gfg("xor-of-all-subarrays-of-an-array")}],practice:[{l:"Missing Number",u:lc("missing-number")}]},
+        {id:102,name:"Number Theory",category:"Math",difficulty:"Medium",description:"GCD, LCM, modular arithmetic basics.",study:[{l:"GFG Number Theory",u:gfg("number-theory-competitive-programming")}],practice:[{l:"GCD of Strings",u:lc("greatest-common-divisor-of-strings")}]},
+        {id:103,name:"Sieve of Eratosthenes",category:"Math",difficulty:"Medium",description:"Generate primes up to N efficiently.",study:[{l:"GFG Sieve",u:gfg("sieve-of-eratosthenes")}],practice:[{l:"Count Primes",u:lc("count-primes")}]},
+        {id:104,name:"Modular Exponentiation",category:"Math",difficulty:"Medium",description:"Fast computation of (a^b) mod m.",study:[{l:"GFG ModExp",u:gfg("modular-exponentiation-power-in-modular-arithmetic")}],practice:[{l:"Pow(x,n)",u:lc("powx-n")}]},
+        {id:105,name:"Combinatorics",category:"Math",difficulty:"Hard",description:"Counting principles, permutations, combinations.",study:[{l:"GFG Combinatorics",u:gfg("combinatorics-on-ordered-trees")}],practice:[{l:"Unique Paths",u:lc("unique-paths")}]},
+        {id:106,name:"Matrix Exponentiation",category:"Math",difficulty:"Hard",description:"Compute linear recurrences in O(log n).",study:[{l:"GFG Matrix Exp",u:gfg("matrix-exponentiation")}],practice:[{l:"Fibonacci Number",u:lc("fibonacci-number")}]},
+        {id:107,name:"Sparse Table",category:"Advanced",difficulty:"Hard",description:"Static range queries (min/max/gcd) in O(1).",study:[{l:"CP-Algo Sparse",u:"https://cp-algorithms.com/data_structures/sparse-table.html"}],practice:[{l:"Range Minimum Query",u:"https://cses.fi/problemset/task/1647"}]},
+        {id:108,name:"Mo's Algorithm",category:"Advanced",difficulty:"Hard",description:"Offline query processing with sqrt decomposition.",study:[{l:"GFG Mo's",u:gfg("mos-algorithm-query-square-root-decomposition-set-1-introduction")}],practice:[{l:"CSES Distinct Values",u:"https://cses.fi/problemset/"}]},
+        {id:109,name:"Heavy-Light Decomposition",category:"Advanced",difficulty:"Hard",description:"Decompose tree for path queries in O(log^2 n).",study:[{l:"CP-Algo HLD",u:"https://cp-algorithms.com/graph/hld.html"}],practice:[{l:"Path Sum Queries",u:"https://cses.fi/problemset/"}]},
+        {id:110,name:"Network Flow",category:"Advanced",difficulty:"Hard",description:"Max flow / min cut algorithms (Ford-Fulkerson).",study:[{l:"GFG MaxFlow",u:gfg("ford-fulkerson-algorithm-for-maximum-flow-problem")}],practice:[{l:"Maximum Students Taking Exam",u:lc("maximum-students-taking-exam")}]}
+      ];
+
+      /* ============ STORAGE ============ */
+      const KEYS = { current: "dsa.current", history: "dsa.history", todos: "dsa.todos" };
+      const todayStr = () => new Date().toISOString().slice(0, 10);
+      const read = (k, d) => { try { const r = localStorage.getItem(k); return r ? JSON.parse(r) : d; } catch { return d; } };
+      const write = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+
+      function pickRandomTopic() {
+        const history = read(KEYS.history, []);
+        const recent = new Set(history.slice(-30).map(h => h.topicId));
+        const pool = TOPICS.filter(t => !recent.has(t.id));
+        const arr = pool.length ? pool : TOPICS;
+        return arr[Math.floor(Math.random() * arr.length)];
+      }
+      function saveTodayTopic(t) {
+        const entry = { date: todayStr(), topicId: t.id };
+        write(KEYS.current, entry);
+        const history = read(KEYS.history, []).filter(h => h.date !== entry.date);
+        history.push(entry);
+        write(KEYS.history, history);
+      }
+      function getSavedTodayTopic() {
+        const cur = read(KEYS.current, null);
+        if (cur && cur.date === todayStr()) return TOPICS.find(t => t.id === cur.topicId) || null;
+        return null;
+      }
+      function getTodos(topicId) { return read(KEYS.todos, []).filter(t => t.topicId === topicId); }
+      function getAllTodos() { return read(KEYS.todos, []); }
+      function addTodoFor(topicId, text) {
+        const all = read(KEYS.todos, []);
+        all.unshift({ id: crypto.randomUUID(), topicId, text, done: false, createdAt: Date.now() });
+        write(KEYS.todos, all);
+      }
+      function toggleTodoId(id) {
+        const all = read(KEYS.todos, []).map(t => t.id === id ? { ...t, done: !t.done } : t);
+        write(KEYS.todos, all);
+      }
+      function deleteTodoId(id) { write(KEYS.todos, read(KEYS.todos, []).filter(t => t.id !== id)); }
+      function seedDefaultTodos(topicId) {
+        if (getTodos(topicId).length > 0) return;
+        const defaults = [
+          "Read the study material thoroughly",
+          "Take notes & summarize key concepts",
+          "Implement core idea from scratch",
+          "Solve at least 3 practice problems",
+          "Review mistakes & write reflections",
+        ];
+        const all = read(KEYS.todos, []);
+        defaults.forEach((text, i) => all.push({ id: crypto.randomUUID(), topicId, text, done: false, createdAt: Date.now() + i }));
+        write(KEYS.todos, all);
+      }
+
+      /* ============ WHEEL ============ */
+      const WHEEL_SIZE = 12; // visible slices on the wheel
+      const PALETTE = ["#ffd6a5","#ffb5a7","#fdffb6","#ffc8dd","#ffadad","#ffe1a8","#ffd1dc","#ffc4a3","#ffe066","#ffb4b4","#fff1ba","#ffd4b8"];
+      let wheelTopics = []; // 12 topics shown on wheel
+      let currentRotation = 0;
+      let isSpinning = false;
+
+      function pickWheelTopics() {
+        // include guaranteed winner via biasing? we will pre-select winner index
+        const shuffled = [...TOPICS].sort(() => Math.random() - 0.5);
+        return shuffled.slice(0, WHEEL_SIZE);
+      }
+
+      function renderWheel() {
+        wheelTopics = pickWheelTopics();
+        const svg = document.getElementById("wheel");
+        const cx = 100, cy = 100, r = 95;
+        const slice = 360 / WHEEL_SIZE;
+        let html = `<defs>
+          <filter id="ds" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="2" result="b"/>
+            <feOffset dx="0" dy="2" />
+            <feComponentTransfer><feFuncA type="linear" slope="0.3"/></feComponentTransfer>
+            <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <circle cx="${cx}" cy="${cy}" r="${r+2}" fill="#fff" filter="url(#ds)"/>`;
+        for (let i = 0; i < WHEEL_SIZE; i++) {
+          const a0 = (i * slice - 90) * Math.PI / 180;
+          const a1 = ((i + 1) * slice - 90) * Math.PI / 180;
+          const x0 = cx + r * Math.cos(a0), y0 = cy + r * Math.sin(a0);
+          const x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
+          const large = slice > 180 ? 1 : 0;
+          const path = `M ${cx} ${cy} L ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1} Z`;
+          html += `<path d="${path}" fill="${PALETTE[i % PALETTE.length]}" stroke="#fff" stroke-width="1.5"/>`;
+          // Radial label: position near outer edge, aligned along the bisector pointing inward.
+          const mid = (i + 0.5) * slice - 90; // degrees in SVG coords
+          // Place text just inside the outer rim
+          const tr = r * 0.92;
+          const tx = cx + tr * Math.cos(mid * Math.PI / 180);
+          const ty = cy + tr * Math.sin(mid * Math.PI / 180);
+          // Rotate so text reads from rim toward center; flip when on left half so it stays upright
+          const onLeft = Math.cos(mid * Math.PI / 180) < 0;
+          const rot = onLeft ? mid + 180 : mid;
+          const anchor = onLeft ? "start" : "end";
+          const raw = wheelTopics[i].name;
+          const label = raw.length > 16 ? raw.slice(0, 15) + "…" : raw;
+          html += `<text x="${tx}" y="${ty}" fill="#5a3a32" font-family="DM Sans, sans-serif" font-size="5.2" font-weight="600" text-anchor="${anchor}" dominant-baseline="middle" transform="rotate(${rot} ${tx} ${ty})">${label}</text>`;
+        }
+        svg.innerHTML = html;
+      }
+
+      function spinWheel() {
+        if (isSpinning) return;
+        isSpinning = true;
+        const btn = document.getElementById("spinBtn");
+        btn.disabled = true;
+        btn.textContent = "✨ Spinning…";
+
+        renderWheel(); // refresh slice topics so each spin has a new mix
+        const winnerIdx = Math.floor(Math.random() * WHEEL_SIZE);
+        const winnerTopic = wheelTopics[winnerIdx];
+        const slice = 360 / WHEEL_SIZE;
+        // Pointer is at top (angle 0 measured from top, rotating clockwise).
+        // Slice i center is at (i+0.5)*slice (in our coordinate system since first slice starts at -90).
+        const centerAngle = (winnerIdx + 0.5) * slice; // degrees from top
+        const baseTurns = 5; // full rotations
+        const targetRotation = baseTurns * 360 + (360 - centerAngle);
+        currentRotation += targetRotation;
+
+        const svg = document.getElementById("wheel");
+        svg.style.transform = `rotate(${currentRotation}deg)`;
+
+        setTimeout(() => {
+          saveTodayTopic(winnerTopic);
+          seedDefaultTodos(winnerTopic.id);
+          renderTopic(winnerTopic);
+          renderTodos(winnerTopic);
+          updateStats();
+          isSpinning = false;
+          btn.disabled = false;
+          btn.textContent = "🎲 Spin Again";
+        }, 4600);
+      }
+
+      /* ============ RENDERING ============ */
+      function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+      }
+
+      function renderTopic(t) {
+        document.getElementById("topicName").textContent = t.name;
+        document.getElementById("topicCat").textContent = t.category;
+        const diffEl = document.getElementById("topicDiff");
+        diffEl.textContent = t.difficulty;
+        diffEl.className = "badge diff-" + t.difficulty;
+        document.getElementById("topicDesc").textContent = t.description;
+        const linkHtml = (arr) => arr.map(r => `<li><a href="${r.u}" target="_blank" rel="noopener">${escapeHtml(r.l)} ↗</a></li>`).join("");
+        document.getElementById("studyList").innerHTML = linkHtml(t.study);
+        document.getElementById("practiceList").innerHTML = linkHtml(t.practice);
+        document.getElementById("todoPanel").style.display = "block";
+        document.getElementById("todoTopicName").textContent = t.name;
+      }
+
+      function renderTodos(topic) {
+        const todos = getTodos(topic.id);
+        const list = document.getElementById("todoList");
+        list.innerHTML = "";
+        if (todos.length === 0) {
+          list.innerHTML = `<li class="empty">No tasks yet — add one above ✨</li>`;
+        } else {
+          todos.forEach(t => {
+            const li = document.createElement("li");
+            li.className = "todo-item" + (t.done ? " done" : "");
+            li.innerHTML = `
+              <button class="check ${t.done ? "done" : ""}" data-toggle="${t.id}" aria-label="Toggle">
+                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-7 7a1 1 0 01-1.4 0l-3.5-3.5a1 1 0 111.4-1.4L9 11.6l6.3-6.3a1 1 0 011.4 0z" clip-rule="evenodd"/></svg>
+              </button>
+              <span class="todo-text">${escapeHtml(t.text)}</span>
+              <button class="del" data-del="${t.id}">Remove</button>
+            `;
+            list.appendChild(li);
+          });
+        }
+        const done = todos.filter(t => t.done).length;
+        const pct = todos.length === 0 ? 0 : Math.round((done / todos.length) * 100);
+        document.getElementById("progressNum").textContent = pct + "%";
+        document.getElementById("doneToday").textContent = done;
+        document.getElementById("totalToday").textContent = todos.length;
+        document.getElementById("progressFill").style.width = pct + "%";
+      }
+
+      function updateStats() {
+        const all = getAllTodos();
+        document.getElementById("doneCount").textContent = all.filter(t => t.done).length;
+        document.getElementById("totalCount").textContent = all.length;
+      }
+
+      function renderBrowse(query = "") {
+        const q = query.toLowerCase().trim();
+        const filtered = TOPICS.filter(t =>
+          !q || t.name.toLowerCase().includes(q) || t.category.toLowerCase().includes(q) || t.difficulty.toLowerCase().includes(q)
+        );
+        const grid = document.getElementById("browseGrid");
+        grid.innerHTML = filtered.map(t => `
+          <article class="topic-card">
+            <div class="row">
+              <h4>${escapeHtml(t.name)}</h4>
+              <span class="mini-badge diff-${t.difficulty}">${t.difficulty}</span>
+            </div>
+            <p class="cat">${escapeHtml(t.category)}</p>
+            <p>${escapeHtml(t.description)}</p>
+          </article>
+        `).join("");
+      }
+
+      /* ============ INIT ============ */
+      function init() {
+        document.getElementById("dateLabel").textContent = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+        document.getElementById("topicTotal").textContent = TOPICS.length;
+        renderWheel();
+        renderBrowse();
+        updateStats();
+
+        const saved = getSavedTodayTopic();
+        if (saved) {
+          renderTopic(saved);
+          renderTodos(saved);
+        }
+
+        document.getElementById("spinBtn").addEventListener("click", spinWheel);
+        document.getElementById("addTodoBtn").addEventListener("click", () => {
+          const input = document.getElementById("todoInput");
+          const text = input.value.trim();
+          const cur = getSavedTodayTopic();
+          if (!text || !cur) return;
+          addTodoFor(cur.id, text);
+          input.value = "";
+          renderTodos(cur);
+          updateStats();
+        });
+        document.getElementById("todoInput").addEventListener("keydown", (e) => {
+          if (e.key === "Enter") document.getElementById("addTodoBtn").click();
+        });
+        document.getElementById("todoList").addEventListener("click", (e) => {
+          const cur = getSavedTodayTopic();
+          if (!cur) return;
+          const tBtn = e.target.closest("[data-toggle]");
+          const dBtn = e.target.closest("[data-del]");
+          if (tBtn) { toggleTodoId(tBtn.getAttribute("data-toggle")); renderTodos(cur); updateStats(); }
+          else if (dBtn) { deleteTodoId(dBtn.getAttribute("data-del")); renderTodos(cur); updateStats(); }
+        });
+        document.getElementById("browseInput").addEventListener("input", (e) => renderBrowse(e.target.value));
+      }
+
+      document.addEventListener("DOMContentLoaded", init);
+    </script>
+  </body>
+</html>
